@@ -23,85 +23,67 @@
 
     <title>proof checker</title>
 
-    <!-- page style from https://github.com/dhg/Skeleton -->
-    <link rel="stylesheet" href="normalize.css">
-    <link rel="stylesheet" href="skeleton.css">
-    <link href="https://fonts.googleapis.com/css?family=Noto+Sans" rel="stylesheet" type="text/css">
-    <link rel="icon" href="/assets/logicproofchecker.png">
-    <link rel="stylesheet" type="text/css" href="semantic/semantic.min.css">
-    <link rel="stylesheet" type="text/css" href="index.css">
-    <link href="https://fonts.googleapis.com/css?family=Josefin+Sans" rel="stylesheet">    
-    <script 
-    src="https://code.jquery.com/jquery-3.1.1.min.js" 
-    integrity="sha256-hVVnYaiADRTO2PzUGmuLJr8BLUSjGIZsDYGmIJLv2b8=" 
-    crossorigin="anonymous">
-    </script>
-    <script src="semantic/semantic.min.js"></script>
+    <!-- CSS & Fonts, third-party -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Noto+Sans" type="text/css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Josefin+Sans" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="assets/lib/normalize.min.css" integrity="sha256-l85OmPOjvil/SOvVt3HnSSjzF1TUMyT9eV0c2BzEGzU=" />
+    <link rel="stylesheet" href="assets/lib/skeleton.min.css" integrity="sha256-2YQRJMXD7pIAPHiXr0s+vlRWA7GYJEK0ARns7k2sbHY=" />
+    <link rel="stylesheet" href="assets/lib/semantic.min.css" integrity="sha256-9mbkOfVho3ZPXfM7W8sV2SndrGDuh7wuyLjtsWeTI1Q=" />
+
+    <!-- CSS, local -->
+    <link rel="stylesheet" type="text/css" href="index.css" />
+    <link rel="stylesheet" type="text/css" href="proofs.css" />
+
+    <!-- Scripts, third-party -->
+    <script src="assets/lib/jquery.min.js" integrity="sha256-9/aliU8dGd2tb6OSsuzixeV4y/faTqgFtohetphbbj0="></script>
+    <script src="assets/lib/semantic.min.js" integrity="sha256-t8GepnyPmw9t+foMh3mKNvcorqNHamSKtKRxxpUEgFI="></script>
     <style>
       body {font-family: "Noto Sans";}
       a, a:hover, a:visited, a:focus, a:active {color: #0c1c8c; text-decoration: none; font-weight: bold ;}
       label, legend { display: inline-block; } 
     </style>
-  
-    <!-- css file -->
-    <link rel="stylesheet" type="text/css" href="proofs.css" />
-    <!-- javascript file -->
-    <script type="text/javascript" charset="utf-8" src="ajax.js"></script>
-    <script type="text/javascript" charset="utf-8" src="syntax.js"></script>
-    <script type="text/javascript" charset="utf-8" src="proofs.js"></script>
-</head>
-<body>
+  </head>
+  <body>
     <div id="top-menu" class="ui menu" style = "height : 60px;">
-        <div class="header item">
-            <h1 id="title" style = "color : white;"><a href="index.php" style="color:white;">Proof Checker</a></h1>
-            <!-- <img id="logo" src="/assets/applogo.png" alt="Italian Trulli" > -->
-        </div>
-        <a href="help.html" class="item" style = "color : white;">
-            Help
-        </a>
-        <a href="references.html" class="item" style = "color : white;">
-            References
-        </a>
-        <a href="rules.html" class="item" style = "color : white;">
-            Logic Rules
-        </a>
-        <div class="right menu">
-            <p id="log-sign" class="item" style = "color : white;">
-            </p>
-        </div>
+      <div class="header item">
+        <h1 id="title"><a href="index.html">Proof Checker</a></h1>
+      </div>
+      <a href="rules.html" class="item">
+        Proof Rules
+      </a>
+      <a href="references.html" class="item">
+        References
+      </a>
+      <a href="help.html" class="item">
+        Help
+      </a>
+      <div class="right menu">
+        <p id="log-sign" class="item" style = "color : white;">
+        </p>
+      </div>
     </div>
 
-<div class="ui container segment" id="rulesContainer">
-    <h2 id="imageHeader" class="ui header" style="letter-spacing: normal;">Help</h2>
-    <h3 style="letter-spacing: normal; margin-bottom: .3rem; text-decoration: underline;">Saving Proofs:</h3>
-    <p>In order to save a proof for later, a user must be signed in to the application. The user can name their proof in the 
-       "name your proof" input bar, if the proof that the user has entered has a name in the input bar and is also imcomplete,
-       the proof will then be saved for later so the user can finish it later. If a user enters a proof with a name that has 
-       already been entered before, the old proof will be updated to the new one.
-    </p>
-    <h3 style="letter-spacing: normal; margin-bottom: .3rem; text-decoration: underline;">Loading Prepository Problems:</h3>
-    <p>Users can only load proofs from the problem repository if they are signed in. When loading a proof from the problem repository
-       The "name your proof", "Premises", and "Conclusions" input bars are all locked to issue a user is solving a problem specifically
-       from the problem repository. If a user wishes to start from scratch at any time they can click on the "restart proof checking
-       from scratch" button to do so.
-    </p>
-    <h3 style="letter-spacing: normal; margin-bottom: .3rem; text-decoration: underline;">Loading Finished Prepository Problems:</h3>
-    <p>When a user loads a finished repository problem, similar to loading repository problems, The "name your proof", "Premises", 
-       and "Conclusions" input bars are all locked. This is done because the purpose of loading problems from this selection is intended
-       for user to view repository problems they have  already done and to see how they did them.
-    </p>
-</div>
+    <div class="ui container segment" id="rulesContainer">
+      <h2 id="imageHeader" class="ui header" style="letter-spacing: normal;">Help</h2>
+      <h3 style="letter-spacing: normal; margin-bottom: .3rem; text-decoration: underline;">Saving Proofs:</h3>
+      <p>In order to save a proof for later, a user must be signed in to the application. The user can name their proof in the 
+	"name your proof" input bar, if the proof that the user has entered has a name in the input bar and is also imcomplete,
+	the proof will then be saved for later so the user can finish it later. If a user enters a proof with a name that has 
+	already been entered before, the old proof will be updated to the new one.
+      </p>
+      <h3 style="letter-spacing: normal; margin-bottom: .3rem; text-decoration: underline;">Loading Prepository Problems:</h3>
+      <p>Users can only load proofs from the problem repository if they are signed in. When loading a proof from the problem repository
+	The "name your proof", "Premises", and "Conclusions" input bars are all locked to issue a user is solving a problem specifically
+	from the problem repository. If a user wishes to start from scratch at any time they can click on the "restart proof checking
+	from scratch" button to do so.
+      </p>
+      <h3 style="letter-spacing: normal; margin-bottom: .3rem; text-decoration: underline;">Loading Finished Prepository Problems:</h3>
+      <p>When a user loads a finished repository problem, similar to loading repository problems, The "name your proof", "Premises", 
+	and "Conclusions" input bars are all locked. This is done because the purpose of loading problems from this selection is intended
+	for user to view repository problems they have  already done and to see how they did them.
+      </p>
+    </div>
 
-
-<hr style="margin-bottom: 15px;">
-<img id="logo" src="/assets/logicproofchecker.png">
-<p id="bottom">Capstone 2019</p>
-<p id="bottom">Logic Proof Checker</p>
-<p id="bottom">Jay Arellano / Mustafa Al Asadi / Gautam Tata / Ben Lenz</p>
-<br>
-
-
-
-</body>
-<script type="text/javascript" src="index.js"></script>
+  </body>
+  <script type="text/javascript" src="index.js"></script>
 </html>

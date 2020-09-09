@@ -19,10 +19,6 @@ type Proof struct {
 	TimeSubmitted  string
 }
 
-//type ProofStore interface {
-//	GetByUser(string) Proof
-//}
-
 type UserWithEmail interface {
 	GetEmail() string
 }
@@ -33,11 +29,32 @@ type UserWithEmail interface {
 type IProofStore interface {
 	// The main program should call the Close() function when it is done using the datastore.
 	Close() error
+
+	// Delete all stored records from the datastore
 	Empty() error
+
+	// Get all user attempts of "repo problems" (those specified as repo problems by admin users)
+	// The returned array of Proof objects contains only those that meet the conditions:
+	// 1) The problem was started by a user selecting it via the 'repo problems' menu
+	// 2) The Premise and Conclusion have not changed from the repo problem's Premise and Conclusion
+	// 3) The repo problem was submitted by a user who is currently an admin user
 	GetAllAttemptedRepoProofs() (error, []Proof)
+
+	// Get public repo problems submitted by admin users, for display to users to choose from
 	GetRepoProofs() (error, []Proof)
+
+	// Get all non-completed proofs submitted by a user
 	GetUserProofs(user UserWithEmail) (error, []Proof)
+
+	// Get all completed proofs submitted by a user
 	GetUserCompletedProofs(user UserWithEmail) (error, []Proof)
+
+	// Save a Proof to the database. The ID will be ignored on input, IDs are created by auto-increment.
+	// Updates are done by a UNIQUE index on ProofName and UserSubmitted. New entries with the same
+	// ProofName and UserSubmitted overwrite prior entries.
 	Store(Proof) error
+
+	// Updates the admin users in the database — used for ensuring that public repo problems
+	// were submitted by users who are administrators
 	UpdateAdmins(adminUsers map[string]bool)
 }

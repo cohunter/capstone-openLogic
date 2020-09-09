@@ -16,6 +16,11 @@ var (
 	proofStore *SQLProofStore
 )
 
+// Make Proof implement the UserWithEmail interface for testing
+func (p Proof) GetEmail() string {
+	return p.UserSubmitted
+}
+
 func getNewDS(t *testing.T) *SQLProofStore {
 	ds, err := NewSQLite(test_dsn)
 	if err != nil {
@@ -76,6 +81,14 @@ func TestStore(t *testing.T) {
 			err := proofStore.Store(tc.testData)
 			if err != nil {
 				t.Error(err)
+			}
+
+			err, proofs := proofStore.GetUserProofs(tc.testData)
+			if err != nil {
+				t.Error(err)
+			}
+			if len(proofs) == 0 {
+				t.Error("No proofs retrieved after Store")
 			}
 		})
 	}

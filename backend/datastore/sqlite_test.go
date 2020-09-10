@@ -3,6 +3,7 @@ package datastore
 import (
 	"log"
 	"os"
+	"reflect"
 	"testing"
 )
 
@@ -48,6 +49,27 @@ func TestEmpty(t *testing.T) {
 	return
 }
 
+// Check if two Proof structs are the same, excluding the Id and TimeSubmitted fields
+func proofIsEqual(a, b Proof) bool {
+	valueA := reflect.ValueOf(a)
+	valueB := reflect.ValueOf(b)
+
+	for i := 0; i < valueA.NumField(); i++ {
+		log.Printf("%+v", valueA.Field(i).Type())
+		switch field := reflect.TypeOf(a).Field(i).Name; field {
+		case "Id":
+			// pass
+		case "TimeSubmitted":
+			// pass
+		default:
+			if valueA.FieldByName(field).String() != valueB.FieldByName(field).String() {
+				return false
+			}
+		}
+	}
+	return true
+}
+
 func TestStore(t *testing.T) {
 	testCases := []struct{
 		testName string
@@ -88,8 +110,14 @@ func TestStore(t *testing.T) {
 				t.Error(err)
 			}
 			if len(proofs) == 0 {
-				t.Error("No proofs retrieved after Store")
+				t.Error("No proof retrieved after Store")
 			}
+			for _, proof := range proofs {
+				if proofIsEqual(tc.testData, proof) {
+					return
+				}
+			}
+			t.Error("No matching proof retrieved after Store")
 		})
 	}
 }

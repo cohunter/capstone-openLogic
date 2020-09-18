@@ -7,7 +7,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
-	datastore "./datastore"
+	datastore "local/datastore"
 )
 
 const (
@@ -58,7 +58,7 @@ func TestSaveProof(t *testing.T) {
 
 	responseRecorder := httptest.NewRecorder()
 
-	ds, err := datastore.New(test_dsn)
+	ds, err := datastore.NewSQLite(test_dsn)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -1,12 +1,9 @@
 package datastore
 
-import (
-	"database/sql"
-	"encoding/json"
-	"errors"
-	"log"
-)
-
+// The Proof struct is used for input/output of proofs to the datastore.
+// The Id field is ignored on input; proofs will be stored with an
+// auto-increment ID, or updated if there is an existing proof with the
+// same values for UserSubmitted and ProofName.
 type Proof struct {
 	Id             string   // SQL ID
 	EntryType      string   // 'proof'
@@ -22,222 +19,42 @@ type Proof struct {
 	TimeSubmitted  string
 }
 
-//type ProofStore interface {
-//	GetByUser(string) Proof
-//}
-
 type UserWithEmail interface {
 	GetEmail() string
 }
 
+// IProofStore is the interface through which the main program interacts with the
+// datastore. To add functionality, define a method in the interface and on the struct
+// which implements the interface.
 type IProofStore interface {
+	// The main program should call the Close() function when it is done using the datastore.
 	Close() error
+
+	// Delete all stored records from the datastore
 	Empty() error
+
+	// Get all user attempts of "repo problems" (those specified as repo problems by admin users)
+	// The returned array of Proof objects contains only those that meet the conditions:
+	// 1) The problem was started by a user selecting it via the 'repo problems' menu
+	// 2) The Premise and Conclusion have not changed from the repo problem's Premise and Conclusion
+	// 3) The repo problem was submitted by a user who is currently an admin user
 	GetAllAttemptedRepoProofs() (error, []Proof)
+
+	// Get public repo problems submitted by admin users, for display to users to choose from
 	GetRepoProofs() (error, []Proof)
+
+	// Get all non-completed proofs submitted by a user
 	GetUserProofs(user UserWithEmail) (error, []Proof)
+
+	// Get all completed proofs submitted by a user
 	GetUserCompletedProofs(user UserWithEmail) (error, []Proof)
+
+	// Save a Proof to the database. The ID will be ignored on input, IDs are created by auto-increment.
+	// Updates are done by a UNIQUE index on ProofName and UserSubmitted. New entries with the same
+	// ProofName and UserSubmitted overwrite prior entries.
 	Store(Proof) error
-	UpdateAdmins(admin_users map[string]bool)
-}
 
-type ProofStore struct {
-	db *sql.DB
-}
-
-func (p *ProofStore) Empty() error {
-	_, err := p.db.Exec(`DELETE FROM proofs`)
-	return err
-}
-
-func getProofsFromRows(rows *sql.Rows) (error, []Proof) {
-	var userProofs []Proof
-	for rows.Next() {
-		var userProof Proof
-		var PremiseJSON string
-		var LogicJSON string
-		var RulesJSON string
-
-		err := rows.Scan(&userProof.Id, &userProof.EntryType, &userProof.UserSubmitted, &userProof.ProofName, &userProof.ProofType, &PremiseJSON, &LogicJSON, &RulesJSON, &userProof.ProofCompleted, &userProof.TimeSubmitted, &userProof.Conclusion, &userProof.RepoProblem)
-		if err != nil {
-			return err, nil
-		}
-
-		if err = json.Unmarshal([]byte(PremiseJSON), &userProof.Premise); err != nil {
-			return err, nil
-		}
-		if err = json.Unmarshal([]byte(LogicJSON), &userProof.Logic); err != nil {
-			return err, nil
-		}
-		if err = json.Unmarshal([]byte(RulesJSON), &userProof.Rules); err != nil {
-			return err, nil
-		}
-
-		userProofs = append(userProofs, userProof)
-	}
-
-	return nil, userProofs
-}
-
-func (p *ProofStore) GetAllAttemptedRepoProofs() (error, []Proof) {
-	// Create 'admin_repoproblems' view
-	_, err := p.db.Exec(`DROP VIEW IF EXISTS admin_repoproblems`)
-	if err != nil {
-		return err, nil
-	}
-
-	_, err = p.db.Exec(`CREATE VIEW admin_repoproblems (userSubmitted, Premise, Conclusion) AS SELECT userSubmitted, Premise, Conclusion FROM proofs WHERE userSubmitted IN (SELECT email FROM admins)`)
-	if err != nil {
-		return err, nil
-	}
-
-	stmt, err := p.db.Prepare(`SELECT id, entryType, userSubmitted, proofName, proofType, Premise, Logic, Rules, proofCompleted, timeSubmitted, Conclusion, repoProblem
-								FROM proofs
-								INNER JOIN admin_repoproblems ON
-									proofs.Premise = admin_repoproblems.Premise AND
-									proofs.Conclusion = admin_repoproblems.Conclusion`)
-	if err != nil {
-		return err, nil
-	}
-	defer stmt.Close()
-	
-	rows, err := stmt.Query()
-	if err != nil {
-		return err, nil
-	}
-	defer rows.Close()
-
-	return getProofsFromRows(rows)
-}
-
-func (p *ProofStore) GetRepoProofs() (error, []Proof) {
-	stmt, err := p.db.Prepare("SELECT id, entryType, userSubmitted, proofName, proofType, Premise, Logic, Rules, proofCompleted, timeSubmitted, Conclusion, repoProblem FROM proofs WHERE repoProblem = 'true' AND userSubmitted IN (SELECT email FROM admins) ORDER BY userSubmitted")
-	if err != nil {
-		return err, nil
-	}
-	defer stmt.Close()
-
-	rows, err := stmt.Query()
-	if err != nil {
-		return err, nil
-	}
-	defer rows.Close()
-
-	return getProofsFromRows(rows)
-}
-
-func (p *ProofStore) GetUserProofs(user UserWithEmail) (error, []Proof) {
-	stmt, err := p.db.Prepare("SELECT id, entryType, userSubmitted, proofName, proofType, Premise, Logic, Rules, proofCompleted, timeSubmitted, Conclusion, repoProblem FROM proofs WHERE userSubmitted = ? AND proofCompleted != 'true' AND proofName != 'n/a'")
-	if err != nil {
-		return err, nil
-	}
-	defer stmt.Close()
-
-	rows, err := stmt.Query(user.GetEmail())
-	if err != nil {
-		return err, nil
-	}
-	defer rows.Close()
-
-	return getProofsFromRows(rows)
-}
-
-func (p *ProofStore) GetUserCompletedProofs(user UserWithEmail) (error, []Proof) {
-	stmt, err := p.db.Prepare("SELECT id, entryType, userSubmitted, proofName, proofType, Premise, Logic, Rules, proofCompleted, timeSubmitted, Conclusion, repoProblem FROM proofs WHERE userSubmitted = ? AND proofCompleted = 'true'")
-	if err != nil {
-		return err, nil
-	}
-	defer stmt.Close()
-
-	rows, err := stmt.Query(user.GetEmail())
-	if err != nil {
-		return err, nil
-	}
-	defer rows.Close()
-
-	return getProofsFromRows(rows)
-}
-
-func (p *ProofStore) Store(proof Proof) error {
-	tx, err := p.db.Begin()
-	if err != nil {
-		return errors.New("Database transaction begin error")
-	}
-	stmt, err := tx.Prepare(`INSERT INTO proofs (entryType,
-							userSubmitted,
-							proofName,
-							proofType,
-							Premise,
-							Logic,
-							Rules,
-							proofCompleted,
-							timeSubmitted,
-							Conclusion,
-							repoProblem)
-				 VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), ?, ?)
-				 ON CONFLICT (userSubmitted, proofName) DO UPDATE SET
-					 	entryType = ?,
-					 	proofType = ?,
-					 	Premise = ?,
-					 	Logic = ?,
-					 	Rules = ?,
-					 	proofCompleted = ?,
-					 	timeSubmitted = datetime('now'),
-					 	Conclusion = ?,
-					 	repoProblem = ?`)
-	defer stmt.Close()
-	if err != nil {
-		return errors.New("Transaction prepare error")
-	}
-
-	PremiseJSON, err := json.Marshal(proof.Premise)
-	if err != nil {
-		return errors.New("Premise marshal error")
-	}
-	LogicJSON, err := json.Marshal(proof.Logic)
-	if err != nil {
-		return errors.New("Logic marshal error")
-	}
-	RulesJSON, err := json.Marshal(proof.Rules)
-	if err != nil {
-		return errors.New("Rules marshal error")
-	}
-	_, err = stmt.Exec(proof.EntryType, proof.UserSubmitted, proof.ProofName, proof.ProofType,
-		PremiseJSON, LogicJSON, RulesJSON, proof.ProofCompleted, proof.Conclusion, proof.RepoProblem,
-		proof.EntryType, proof.ProofType, PremiseJSON, LogicJSON, RulesJSON, proof.ProofCompleted,
-		proof.Conclusion, proof.RepoProblem)
-	if err != nil {
-		return errors.New("Statement exec error")
-	}
-	tx.Commit()
-
-	return nil
-}
-
-func (p *ProofStore) UpdateAdmins(admin_users map[string]bool) {
-	// Rebuild 'admins' table
-	_, err := p.db.Exec(`DROP TABLE IF EXISTS admins`)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	_, err = p.db.Exec(`CREATE TABLE admins (
-			email TEXT
-		)`)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	stmt, err := p.db.Prepare(`INSERT INTO admins VALUES (?)`)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer stmt.Close()
-
-	for adminEmail := range admin_users {
-		_, err = stmt.Exec(adminEmail)
-		if err != nil {
-			log.Fatal(err)
-		}
-	}
+	// Updates the admin users in the database — used for ensuring that public repo problems
+	// were submitted by users who are administrators
+	UpdateAdmins(adminUsers map[string]bool)
 }

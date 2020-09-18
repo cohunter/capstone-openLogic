@@ -2,13 +2,13 @@ package main
 
 import (
 	"encoding/json"
+	"flag"
 	"io"
 	"log"
 	"net/http"
-	"flag"
 
-	datastore "./datastore"
-	tokenauth "./google-token-auth"
+	datastore "local/datastore"
+	tokenauth "local/google-token-auth"
 )
 
 var (
@@ -200,7 +200,7 @@ func (env *Env) populateTestData() {
 func main() {
 	log.Println("Server initializing")
 
-	ds, err := datastore.New(database_uri)
+	ds, err := datastore.NewSQLite(database_uri)
 	if err != nil {
 		log.Fatal(err)
 	}
